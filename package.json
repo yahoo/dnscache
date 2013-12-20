@@ -1,0 +1,34 @@
+{
+    "name": "dnscache",
+    "description": "dnscache for Node",
+    "author": "Vinit Sacheti <vsacheti@yahoo.com>",
+    "version": "0.0.1",
+    "dependencies": {
+    },
+    "devDependencies": {
+        "jshint": "~0.9.0",
+        "yui-lint": "~0.1.1",
+        "istanbul": "~0.1.8",
+        "vows": "*",
+        "async": "*"
+    },
+    "keywords": [
+        "dnscache", "dns", "nagios"
+    ],
+    "main": "./lib/index.js",
+    "scripts": {
+        "pretest": "jshint --config ./node_modules/yui-lint/jshint.json ./lib/ ./test/",
+        "test": "istanbul cover --print both vows -- --spec ./test/*.js"
+    },
+    "bugs": { "url" : "http://github.com/yahoo/dnscache/issues" },
+    "licenses":[
+        {
+            "type" : "BSD",
+            "url" : "https://github.com/yahoo/dnscache/blob/master/LICENSE"
+        }
+    ],
+    "repository": {
+        "type":"git",
+        "url":"http://github.com/yahoo/dnscache.git"
+    }
+}
