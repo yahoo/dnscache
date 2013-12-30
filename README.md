@@ -27,8 +27,8 @@ var dns = require('dns'),
         "cachesize" : 1000
     });
     
-    //to use the cached dns either of dnscahe or dns can be called.
-    //all the methods of dns are wrapped, this one just shows lookup an an example
+    //to use the cached dns either of dnscache or dns can be called.
+    //all the methods of dns are wrapped, this one just shows lookup on an example
     
     //will call the wrapped dns
     dnscache.lookup('www.yahoo.com', function(err, result) {
@@ -55,7 +55,7 @@ Configuration
 Advanced Caching
 ----------------
 
-If you want to use a different cache mechinism (ex: `mdbm`, `redis`), you only need to create an object similar to this:
+If you want to use a different cache mechanism (ex: `mdbm`, `redis`), you only need to create an object similar to this:
 
 ```javascript
 var Cache = function(config) {
