@@ -138,11 +138,15 @@ var tests = {
     },
     'test_cache_hits': {
         topic: function () {
-            var CacheObject = new mod_cache({"ttl" : 300, "cachesize" : 5});
-            CacheObject.set(1, 1);
-            CacheObject.get(1);
-            CacheObject.get(1);
-            return CacheObject;
+            var CacheObject = new mod_cache({"ttl" : 300, "cachesize" : 5}),
+                that = this;
+            CacheObject.set(1, 1, function () {
+                CacheObject.get(1, function () {
+                    CacheObject.get(1, function () {
+                        that.callback(null, CacheObject);
+                    });
+                });
+            });
         },
         'test hits': function (topic) {
             assert.equal(topic.data['1'].hit, 2);
