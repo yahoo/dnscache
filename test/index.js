@@ -99,16 +99,20 @@ var tests = [{
     'test_lookup_with_family' : {
         topic : function () {
             var that = this;
-            dns.lookup('127.0.0.1',4, function() {
-                dns.lookup('::1', 6, function(err) {
-                    that.callback(err,dns.internalCache);
+            dns.lookup('127.0.0.1', 4, function() {
+                dns.lookup('::1', 6, function() {
+                    dns.lookup('127.0.0.1', { family: 4, hints: dns.ADDRCONFIG }, function() {
+                        dns.lookup('::1', { family: 6, hints: dns.ADDRCONFIG }, function(err) {
+                            that.callback(err, dns.internalCache);
+                        });
+                    });
                 });
             });
         },
         'verify family4 cache is created' : function (internalCache) {
             assert.isNotNull(internalCache);
-            assert.equal(internalCache.data['lookup_127.0.0.1_4'].hit, 0, 'hit should be 0 for family4');
-            assert.equal(internalCache.data['lookup_::1_6'].hit, 0, 'hit should be 0 for family6');
+            assert.equal(internalCache.data['lookup_127.0.0.1_4'].hit, 1, 'hit should be 1 for family4');
+            assert.equal(internalCache.data['lookup_::1_6'].hit, 1, 'hit should be 1 for family6');
         },
         'test invalid family' : {
             topic : function () {
@@ -133,17 +137,6 @@ var tests = [{
             assert.isNotNull(topic.cache);
             assert.isNotNull(topic.result);
             assert.equal(topic.cache.data['resolve_www.yahoo.com_A'].hit, 0, 'hit should be 0 for resolve');
-        },
-        'test invalid family' : {
-            topic : function () {
-                var that = this;
-                    dns.lookup('127.0.0.1', 7, function(err) {
-                        that.callback(null, err);
-                    });
-            },
-            'verify error is thrown' : function (topic) {
-                assert.isNotNull(topic);
-            }
         }
     },
         
