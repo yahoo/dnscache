@@ -144,15 +144,10 @@ var tests = [{
         topic : function () {
             var that = this, index = 0;
             async.eachSeries(methods, function(method, cb) {
-                if (method === dns.reverse) {
-                    //ignore the reverse, for some reason it throws an exception
-                    cb('error', 'error');
-                } else {
-                    method('someerrordata', function(err) {
-                        ++index;
-                        cb(null, err);
-                    });
-                }
+                method('someerrordata', function(err) {
+                    ++index;
+                    cb(null, err);
+                });
             }, function () {
                 that.callback(null,dns.internalCache);
             });
