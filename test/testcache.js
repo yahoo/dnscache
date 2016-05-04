@@ -1,3 +1,5 @@
+/*jshint newcap: false */
+/*global describe, it*/
 /*
 * Copyright (c) 2013, Yahoo! Inc. All rights reserved.
 * Copyrights licensed under the New BSD License.
@@ -5,238 +7,212 @@
 */
 
 var assert = require('assert'),
-    vows = require('vows'),
+    async = require('async'),
     mod_cache = require('../lib/cache.js');
 
-var asyncFor = function (iterations, func, callback) {
-    var i_index = 0, done = false, loop = {
-        next : function () {
-            if (done) {
-                return;
-            }
+describe('caching tests', function() {
 
-            if (i_index < iterations) {
-                i_index += 1;
-                func(loop);
+    it('should return a Cache Object with defaults', function() {
+        var conf = {};
+        new mod_cache(conf);
+        assert.ok(conf);
+        assert.equal(conf.ttl, 300);
+        assert.equal(conf.cachesize, 1000);
+    });
 
-            } else {
-                done = true;
-                callback();
-            }
-        },
-        iteration : function () {
-            return i_index - 1;
-        },
-        exit : function () {
-            done = true;
-            callback();
-        }
-    };
-    loop.next();
-    return loop;
-};
+    it('should return a Cache Object with defaults without config', function() {
+        var mod = new mod_cache();
+        assert.equal(mod.ttl, 300 * 1000);
+        assert.equal(mod.max, 1000);
+    });
 
-var tests = {
-    'loading': {
-        topic: function () {
-            return mod_cache;
-        },
-        'should be a function': function (topic) {
-            assert.isFunction(topic);
-        },
-        'and should return an object': {
-            topic: function () {
-                return new mod_cache();
-            },
-            'not null': function (topic) {
-                assert.isNotNull(topic);
-            }
-        },
-        'and test defaults' : {
-            topic: function () {
-                var conf = {}, mod;
-                mod = new mod_cache(conf);
-                return conf;
-            },
-            'not null': function (conf) {
-                assert.isNotNull(conf);
-                assert.equal(conf.ttl, 300);
-                assert.equal(conf.cachesize, 1000);
-            }
-        }
-    },
-    'test cache lru': {
-        topic: function () {
-            var CacheObject = new mod_cache({"ttl" : 300, "cachesize" : 5}),
-                that = this, index = 0;
-            asyncFor(6, function (loop) {
-                CacheObject.set(index, index, function () {
-                    index = index + 1;
-                    loop.next();
-                });
-            }, function () {
-                CacheObject.get(0, function (err0, data0) {
-                    CacheObject.get(1, function (err1, data1) {
-                        CacheObject.get('unknownkey', function (err2, data2) {
-                            that.callback(null, {"data0" : data0, "data1" : data1, "data2" : data2,
-                                        "err0" : err0, "err1" : err1, "err2" : err2});
-                        });
+    it('should cache entries for lru', function(done) {
+        var CacheObject = new mod_cache({"ttl" : 300, "cachesize" : 5}),
+            array = Array.apply(null, Array(5)).map(function(v, k) { return k; });
+
+        async.each(array, function (name, callback) {
+            CacheObject.set(name, name, function () {
+                callback(null);
+            });
+        }, function () {
+            CacheObject.get(0, function (err0) {
+                CacheObject.get(1, function (err1, data1) {
+                    CacheObject.get('unknownkey', function (err2, data2) {
+                        assert.equal(true, data1 !== undefined && data2 === undefined);
+                        assert.equal(null, err0);
+                        assert.equal(null, err1);
+                        assert.equal(null, err2);
+                        done();
                     });
                 });
             });
-        },
-        'test cache entries for lru': function (topic) {
-            assert.isTrue(topic.data0 === undefined && topic.data1 !== undefined && topic.data3 === undefined);
-            assert.isNull(topic.err0);
-            assert.isNull(topic.err1);
-            assert.isNull(topic.err2);
-        }
-    },
-    'test_cache_update_multiple': {
-        topic: function () {
-            var CacheObject = new mod_cache({"ttl" : 300, "cachesize" : 5}),
-            that = this;
-            CacheObject.set(1, 1, function () {
-                CacheObject.set(2, 2, function () {
-                    CacheObject.set(3, 30, function () {
-                        CacheObject.set(3, 31, function () {
-                            CacheObject.set(2, 4, function () {
-                                CacheObject.set(2, 5, function () {
-                                    CacheObject.set(1, 6, function () {
-                                        that.callback(null, CacheObject);
-                                    });
+        });
+    });
+
+    it('should update multiple keys', function(done) {
+        var CacheObject = new mod_cache({
+            ttl: 300,
+            cachesize: 5
+        });
+
+        CacheObject.set(1, 1, function () {
+            CacheObject.set(2, 2, function () {
+                CacheObject.set(3, 30, function () {
+                    CacheObject.set(3, 31, function () {
+                        CacheObject.set(2, 4, function () {
+                            CacheObject.set(2, 5, function () {
+                                CacheObject.set(1, 6, function () {
+                                    assert.equal(CacheObject.count, 3);
+                                    assert.equal(CacheObject.tail.key, 3);
+                                    assert.equal(CacheObject.tail.val, 31);
+                                    assert.equal(CacheObject.head.key, 1);
+                                    assert.equal(CacheObject.head.val, 6);
+                                    done();
                                 });
                             });
                         });
                     });
                 });
             });
-        },
-        'test head and tail': function (cacheObject) {
-            assert.equal(cacheObject.count, 3);
-            assert.equal(cacheObject.tail.key, 3);
-            assert.equal(cacheObject.tail.val, 31);
-            assert.equal(cacheObject.head.key, 1);
-            assert.equal(cacheObject.head.val, 6);
-        }
-    },
-    'test_cache_get': {
-        topic: function () {
-            var CacheObject = new mod_cache({"ttl" : 300, "cachesize" : 5}),
-                that = this;
-            CacheObject.set(1, 1, function () {
-                CacheObject.set(1, 2, function () {
-                    CacheObject.get(1, function (err, rec) {
-                        that.callback(err, rec);
-                    });
+        });
+    });
+
+    it('should get a key', function(done) {
+        var CacheObject = new mod_cache({
+            ttl: 300,
+            cachesize: 5
+        });
+        CacheObject.set(1, 1, function () {
+            CacheObject.set(1, 2, function () {
+                CacheObject.get(1, function (err, rec) {
+                    assert.equal(rec, 2);
+                    done();
                 });
             });
-        },
-        'test get': function (topic) {
-            assert.equal(topic, 2);
-        }
-    },
-    'test_cache_hits': {
-        topic: function () {
-            var CacheObject = new mod_cache({"ttl" : 300, "cachesize" : 5}),
-                that = this;
-            CacheObject.set(1, 1, function () {
+        });
+    });
+
+    it('should allow to see hit stats', function(done) {
+        var CacheObject = new mod_cache({
+            ttl: 300,
+            cachesize: 5
+        });
+
+        CacheObject.set(1, 1, function () {
+            CacheObject.get(1, function () {
                 CacheObject.get(1, function () {
-                    CacheObject.get(1, function () {
-                        that.callback(null, CacheObject);
-                    });
+                    assert.equal(CacheObject.data['1'].hit, 2);
+                    done();
                 });
             });
-        },
-        'test hits': function (topic) {
-            assert.equal(topic.data['1'].hit, 2);
-        }
-    },
-    'test_ttl_expire_single_item': {
-        topic: function () {
-            var CacheObject = new mod_cache({"ttl" : 1, "cachesize" : 5}),
-                that = this;
-            CacheObject.set(1, 1);
-            CacheObject.get(1);
-            CacheObject.get(1);
-            setTimeout(function(){
-                CacheObject.get(1, function () {
-                    that.callback(null, CacheObject);
-                });
-            }, 1200);
-        },
-        'test undefined': function (topic) {
-            assert.isUndefined(topic.data['1']);
-        }
-    },
-    'test_ttl_never_expire': {
-        topic: function () {
-            var CacheObject = new mod_cache({"ttl" : 0, "cachesize" : 5}),
-                that = this;
-            CacheObject.set(2, 2);
-            CacheObject.set(1, 1);
-            setTimeout(function(){
-                CacheObject.get(1, function () {
-                    that.callback(null, CacheObject);
-                });
-            }, 1200);
-        },
-        'test undefined': function (topic) {
-            assert.isNotNull(topic.data['1']);
-            assert.equal(topic.data['1'].val, 1);
-        }
-    },
-    'test_ttl_expire_head': {
-        topic: function () {
-            var CacheObject = new mod_cache({"ttl" : 1, "cachesize" : 5}),
-                that = this;
-            CacheObject.set(2, 2);
-            CacheObject.set(1, 1);
-            setTimeout(function(){
-                CacheObject.get(1, function () {
-                    that.callback(null, CacheObject);
-                });
-            }, 1200);
-        },
-        'test undefined': function (topic) {
-            assert.isUndefined(topic.data['1']);
-        }
-    },
-    'test_ttl_expire_tail': {
-        topic: function () {
-            var CacheObject = new mod_cache({"ttl" : 1, "cachesize" : 5}),
-                that = this;
-            CacheObject.set(1, 1);
-            CacheObject.set(2, 2);
-            setTimeout(function(){
-                CacheObject.get(1, function () {
-                    that.callback(null, CacheObject);
-                });
-            }, 1200);
-        },
-        'test undefined': function (topic) {
-            assert.isUndefined(topic.data['1']);
-        }
-    },
-    'test_ttl_expire_middle': {
-        topic: function () {
-            var CacheObject = new mod_cache({"ttl" : 1, "cachesize" : 5}),
-                that = this;
-            CacheObject.set(3, 3);
-            CacheObject.set(1, 1);
-            CacheObject.set(2, 2);
-            setTimeout(function(){
-                CacheObject.get(1, function () {
-                    that.callback(null, CacheObject);
-                });
-            }, 1200);
-        },
-        'test undefined': function (topic) {
-            assert.isUndefined(topic.data['1']);
-        }
-    }
-};
+        });
+    });
 
-vows.describe('mod_cache').addBatch(tests)['export'](module);
+    it('should expire a single item', function(done) {
+        var CacheObject = new mod_cache({
+            ttl: 1,
+            cachesize: 5
+        }), noop = function() {};
+        CacheObject.set(1, 1);
+        CacheObject.get(1, noop);
+        CacheObject.get(1, noop);
+        setTimeout(function(){
+            CacheObject.get(1, function () {
+                assert.equal(undefined, CacheObject.data['1']);
+                done();
+            });
+        }, 1200);
+    });
 
-// vim:ts=4 sw=4 et
+    it('should not expire a key', function(done) {
+        var CacheObject = new mod_cache({
+            ttl: 0,
+            cachesize: 5
+        });
+        CacheObject.set(2, 2);
+        CacheObject.set(1, 1);
+        setTimeout(function(){
+            CacheObject.get(1, function () {
+                assert.ok(CacheObject.data['1']);
+                assert.equal(CacheObject.data['1'].val, 1);
+                done();
+            });
+        }, 1200);
+    });
+
+    it('should expire head via ttl', function(done) {
+        var CacheObject = new mod_cache({
+            ttl: 1,
+            cachesize: 5
+        });
+        CacheObject.set(2, 2);
+        CacheObject.set(1, 1);
+        setTimeout(function(){
+            CacheObject.get(1, function () {
+                assert.equal(undefined, CacheObject.data['1']);
+                done();
+            });
+        }, 1200);
+    });
+
+    it('should expire tail via ttl', function(done) {
+        var CacheObject = new mod_cache({
+            ttl: 1,
+            cachesize: 5
+        });
+        CacheObject.set(1, 1);
+        CacheObject.set(2, 2);
+        setTimeout(function(){
+            CacheObject.get(1, function () {
+                assert.equal(undefined, CacheObject.data['1']);
+                done();
+            });
+        }, 1200);
+    });
+
+    it('should expire middle via ttl', function(done) {
+        var CacheObject = new mod_cache({
+            ttl: 1,
+            cachesize: 5
+        });
+        CacheObject.set(3, 3);
+        CacheObject.set(1, 1);
+        CacheObject.set(2, 2);
+        setTimeout(function(){
+            CacheObject.get(1, function () {
+                assert.equal(undefined, CacheObject.data['1']);
+                done();
+            });
+        }, 1200);
+    });
+
+    it('should throw if cache.get does not get a callback', function() {
+        var CacheObject = new mod_cache({
+            ttl: 1,
+            cachesize: 5
+        });
+        
+        assert.throws(function() {
+            CacheObject.get(1);
+        }, /callback is required/);
+    });
+
+    it('should remove items from cache when cache limit is hit', function(done) {
+        var CacheObject = new mod_cache({
+            ttl: 1,
+            cachesize: 2
+        });
+        
+        CacheObject.set(1, 1, function() {
+            assert.equal(CacheObject.count, 1);
+            CacheObject.set(2, 1, function() {
+                assert.equal(CacheObject.count, 2);
+                CacheObject.set(3, 1, function() {
+                    assert.equal(CacheObject.count, 2);
+                    done();
+                });
+            });
+        });
+    });
+
+});
