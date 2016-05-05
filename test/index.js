@@ -97,67 +97,11 @@ describe('dnscache main test suite', function() {
         });
     });
 
-    it('should error if the underlying dns method throws', function(done) {
-        var errors = [];
-        async.each(methods, function(method, cb) {
-            method([], function(err) {
-                errors.push(err);
-                cb(null);
-            });
-        }, function (err) {
-            assert.ok(!err);
-            assert.ok(Array.isArray(errors));
-            assert.ok(errors.length > 0);
-            errors.forEach(function(e) {
-                if (e) { //one node 0.10 method doens't throw
-                    assert.ok((e instanceof Error));
-                }
-            });
-            done();
-        });
-    });
-
-    it('should error on invalid reverse lookup', function(done) {
-        dns.reverse('1.1.1.1', function(err) {
-            assert.ok((err instanceof Error));
-            done();
-        });
-    });
-
-    it('should error on invalid family', function(done) {
-        dns.lookup('127.0.0.1', 7, function(err) {
-            assert.ok((err instanceof Error));
-            done();
-        });
-    });
-
-    it('should error on invalid family Object', function() {
-        dns.lookup('127.0.0.1', { family: 7 }, function(err) {
-            assert.ok((err instanceof Error));
-        });
-    });
-
     it('should create resolve cache with type', function (done) {
         dns.resolve('www.yahoo.com', 'A', function(err, result) {
             assert.ok(dns.internalCache);
             assert.ok(result);
             assert.equal(dns.internalCache.data['resolve_www.yahoo.com_A'].hit, 0, 'hit should be 0 for resolve');
-            done();
-        });
-    });
-
-    it('not create a cache from an error in a lookup', function (done) {
-        var index = 0;
-        async.eachSeries(methods, function(method, cb) {
-            method('someerrordata', function(err) {
-                ++index;
-                cb(null, err);
-            });
-        }, function () {
-            methods.forEach(function(name, index) {
-                var key = suffix[index] !== 'none' ? prefix[index] + 'someerrordata' + suffix[index] : prefix[index] + 'someerrordata';
-                assert.equal(dns.internalCache.data[key], undefined, 'entry should not there for ' + key);
-            });
             done();
         });
     });
@@ -230,6 +174,39 @@ describe('dnscache main test suite', function() {
             assert.equal(conf.cachesize, 1000);
             done();
         });
+    });
+
+    describe('error handling', function() {
+    
+        ['resolve', 'lookup', 'resolveMx', 'resolveTxt', 'resolveSrv', 'resolveNs', 'resolveCname', 'resolve4', 'resolve6'].forEach(function(name) {
+            it('should error on invalid call to dns.' + name, function(done) {
+                dns[name]('asdfasdfa', function(err) {
+                    assert.ok((err instanceof Error));
+                    done();
+                });
+            });
+        });
+
+        it('should error on invalid reverse lookup', function(done) {
+            dns.reverse('1.1.1.1', function(err) {
+                assert.ok((err instanceof Error));
+                done();
+            });
+        });
+
+        it('should error on invalid family', function(done) {
+            dns.lookup('127.0.0.1', 7, function(err) {
+                assert.ok((err instanceof Error));
+                done();
+            });
+        });
+
+        it('should error on invalid family Object', function() {
+            dns.lookup('127.0.0.1', { family: 7 }, function(err) {
+                assert.ok((err instanceof Error));
+            });
+        });
+            
     });
 
 });
