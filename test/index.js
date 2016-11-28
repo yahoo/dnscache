@@ -20,7 +20,7 @@ var params = ["www.yahoo.com", "www.google.com", "www.google.com", "ipv6.google.
     "google.com", "www.yahoo.com", "yahoo.com", "www.yahoo.com", "173.236.27.26"];
 var prefix = ['lookup_', 'resolve_', 'resolve4_', 'resolve6_', 'resolveMx_', 'resolveTxt_',
     'resolveSrv_', 'resolveNs_', 'resolveCname_', 'reverse_'];
-var suffix = ['_0', '_A', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none'];
+var suffix = ['_0_0_false', '_A', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none'];
 
 describe('dnscache main test suite', function() {
     this.timeout(10000); //dns queries are slow..
@@ -87,8 +87,8 @@ describe('dnscache main test suite', function() {
                     dns.lookup('127.0.0.1', { hints: dns.ADDRCONFIG }, function() {
                         dns.lookup('::1', { family: 6, hints: dns.ADDRCONFIG }, function() {
                             assert.ok(dns.internalCache);
-                            assert.equal(dns.internalCache.data['lookup_127.0.0.1_4'].hit, 1, 'hit should be 1 for family4');
-                            assert.equal(dns.internalCache.data['lookup_::1_6'].hit, 1, 'hit should be 1 for family6');
+                            assert.equal(dns.internalCache.data['lookup_127.0.0.1_4_0_false'].hit, 0, 'hit should be 0 for family4');
+                            assert.equal(dns.internalCache.data['lookup_::1_6_0_false'].hit, 0, 'hit should be 0 for family6');
                             done();
                         });
                     });
@@ -220,9 +220,9 @@ describe('dnscache main test suite', function() {
         testee.lookup('127.0.0.1', function() {
             //verify cache is created
             assert.ok(testee.internalCache);
-            assert.equal(testee.internalCache.data['lookup_127.0.0.1_0'].hit, 0, 'hit should be 0 for family4');
+            assert.equal(testee.internalCache.data['lookup_127.0.0.1_0_0_false'].hit, 0, 'hit should be 0 for family4');
             assert.ok(dns.internalCache);
-            assert.equal(dns.internalCache.data['lookup_127.0.0.1_0'].hit, 0, 'hit should be 0 for family4');
+            assert.equal(dns.internalCache.data['lookup_127.0.0.1_0_0_false'].hit, 0, 'hit should be 0 for family4');
             
             //verify default values
             assert.ok(conf);
@@ -232,4 +232,23 @@ describe('dnscache main test suite', function() {
         });
     });
 
+    it('should return array if lookup all', function(done) {
+        //if created from other tests
+        if (require('dns').internalCache) {
+            delete require('dns').internalCache;
+        }
+        var conf = {
+            enable: true
+        },
+        testee = require('../lib/index.js')(conf);
+        dns.lookup('127.0.0.1', {all: true}, function(err, addresses) {
+            assert.ok(Array.isArray(addresses));
+            assert.equal(testee.internalCache.data['lookup_127.0.0.1_0_0_true'].hit, 0, 'hit should be 0');
+            dns.lookup('127.0.0.1', {all: true}, function(err, addresses) {
+                assert.ok(Array.isArray(addresses));
+                assert.equal(testee.internalCache.data['lookup_127.0.0.1_0_0_true'].hit, 1, 'hit should be 1');
+                done();
+            });
+        });
+    });
 });
