@@ -232,23 +232,26 @@ describe('dnscache main test suite', function() {
         });
     });
 
-    it('should return array if lookup all', function(done) {
-        //if created from other tests
-        if (require('dns').internalCache) {
-            delete require('dns').internalCache;
-        }
-        var conf = {
-            enable: true
-        },
-        testee = require('../lib/index.js')(conf);
-        dns.lookup('127.0.0.1', {all: true}, function(err, addresses) {
-            assert.ok(Array.isArray(addresses));
-            assert.equal(testee.internalCache.data['lookup_127.0.0.1_0_0_true'].hit, 0, 'hit should be 0');
+    // lookup's all option require node v4+.
+    if (process.versions.node.split('.')[0] >= 4) {
+        it('should return array if lookup all', function(done) {
+            //if created from other tests
+            if (require('dns').internalCache) {
+                delete require('dns').internalCache;
+            }
+            var conf = {
+                enable: true
+            },
+                testee = require('../lib/index.js')(conf);
             dns.lookup('127.0.0.1', {all: true}, function(err, addresses) {
                 assert.ok(Array.isArray(addresses));
-                assert.equal(testee.internalCache.data['lookup_127.0.0.1_0_0_true'].hit, 1, 'hit should be 1');
-                done();
+                assert.equal(testee.internalCache.data['lookup_127.0.0.1_0_0_true'].hit, 0, 'hit should be 0');
+                dns.lookup('127.0.0.1', {all: true}, function(err, addresses) {
+                    assert.ok(Array.isArray(addresses));
+                    assert.equal(testee.internalCache.data['lookup_127.0.0.1_0_0_true'].hit, 1, 'hit should be 1');
+                    done();
+                });
             });
         });
-    });
+    }
 });
