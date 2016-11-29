@@ -22,6 +22,11 @@ var prefix = ['lookup_', 'resolve_', 'resolve4_', 'resolve6_', 'resolveMx_', 're
     'resolveSrv_', 'resolveNs_', 'resolveCname_', 'reverse_'];
 var suffix = ['_0_0_false', '_A', 'none', 'none', 'none', 'none', 'none', 'none', 'none', 'none'];
 
+// node v4+ dns.lookup support "all" option.
+var node_support_lookup_all = process.versions.node.split('.')[0] >= 4;
+// node v0.12+ dns.lookup support "hints" option.
+var node_support_lookup_hints = process.versions.node.split('.')[0] > 0 || process.versions.node.split('.')[1] >= 12;
+
 describe('dnscache main test suite', function() {
     this.timeout(10000); //dns queries are slow..
 
@@ -87,8 +92,9 @@ describe('dnscache main test suite', function() {
                     dns.lookup('127.0.0.1', { hints: dns.ADDRCONFIG }, function() {
                         dns.lookup('::1', { family: 6, hints: dns.ADDRCONFIG }, function() {
                             assert.ok(dns.internalCache);
-                            assert.equal(dns.internalCache.data['lookup_127.0.0.1_4_0_false'].hit, 0, 'hit should be 0 for family4');
-                            assert.equal(dns.internalCache.data['lookup_::1_6_0_false'].hit, 0, 'hit should be 0 for family6');
+                            var hit = node_support_lookup_hints ? 0 : 1;
+                            assert.equal(dns.internalCache.data['lookup_127.0.0.1_4_0_false'].hit, hit, 'hit should be ' + hit + ' for family4');
+                            assert.equal(dns.internalCache.data['lookup_::1_6_0_false'].hit, hit, 'hit should be ' + hit + ' for family6');
                             done();
                         });
                     });
@@ -233,7 +239,7 @@ describe('dnscache main test suite', function() {
     });
 
     // lookup's all option require node v4+.
-    if (process.versions.node.split('.')[0] >= 4) {
+    if (node_support_lookup_all) {
         it('should return array if lookup all', function(done) {
             //if created from other tests
             if (require('dns').internalCache) {
