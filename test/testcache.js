@@ -215,4 +215,18 @@ describe('caching tests', function() {
         });
     });
 
+    it('should not error when calling cache.get on an expired key twice in the same tick', function(done) {
+        var CacheObject = new mod_cache({
+            ttl: 1,
+            cachesize: 5
+        });
+        CacheObject.set(1, 1);
+        setTimeout(function() {
+            CacheObject.get(1, Function.prototype);
+            CacheObject.get(1, function() {
+                done();
+            });
+        }, 1200);
+    });
+
 });
