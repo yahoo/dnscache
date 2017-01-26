@@ -191,7 +191,7 @@ describe('caching tests', function() {
             ttl: 1,
             cachesize: 5
         });
-        
+
         assert.throws(function() {
             CacheObject.get(1);
         }, /callback is required/);
@@ -202,7 +202,7 @@ describe('caching tests', function() {
             ttl: 1,
             cachesize: 2
         });
-        
+
         CacheObject.set(1, 1, function() {
             assert.equal(CacheObject.count, 1);
             CacheObject.set(2, 1, function() {
@@ -216,7 +216,7 @@ describe('caching tests', function() {
     });
 
     it('should not error when calling cache.get on an expired key twice in the same tick', function(done) {
-        var CacheObject = new mod_cache({
+        var CacheObject = new Mod_cache({
             ttl: 1,
             cachesize: 5
         });
