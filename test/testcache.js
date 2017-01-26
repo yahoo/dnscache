@@ -8,26 +8,26 @@
 
 var assert = require('assert'),
     async = require('async'),
-    mod_cache = require('../lib/cache.js');
+    Mod_cache = require('../lib/cache.js');
 
 describe('caching tests', function() {
 
     it('should return a Cache Object with defaults', function() {
         var conf = {};
-        new mod_cache(conf);
+        new Mod_cache(conf);
         assert.ok(conf);
         assert.equal(conf.ttl, 300);
         assert.equal(conf.cachesize, 1000);
     });
 
     it('should return a Cache Object with defaults without config', function() {
-        var mod = new mod_cache();
+        var mod = new Mod_cache();
         assert.equal(mod.ttl, 300 * 1000);
         assert.equal(mod.max, 1000);
     });
 
     it('should cache entries for lru', function(done) {
-        var CacheObject = new mod_cache({"ttl" : 300, "cachesize" : 5}),
+        var CacheObject = new Mod_cache({"ttl" : 300, "cachesize" : 5}),
             array = Array.apply(null, Array(5)).map(function(v, k) { return k; });
 
         async.each(array, function (name, callback) {
@@ -50,7 +50,7 @@ describe('caching tests', function() {
     });
 
     it('should update multiple keys', function(done) {
-        var CacheObject = new mod_cache({
+        var CacheObject = new Mod_cache({
             ttl: 300,
             cachesize: 5
         });
@@ -78,7 +78,7 @@ describe('caching tests', function() {
     });
 
     it('should get a key', function(done) {
-        var CacheObject = new mod_cache({
+        var CacheObject = new Mod_cache({
             ttl: 300,
             cachesize: 5
         });
@@ -93,7 +93,7 @@ describe('caching tests', function() {
     });
 
     it('should allow to see hit stats', function(done) {
-        var CacheObject = new mod_cache({
+        var CacheObject = new Mod_cache({
             ttl: 300,
             cachesize: 5
         });
@@ -109,7 +109,7 @@ describe('caching tests', function() {
     });
 
     it('should expire a single item', function(done) {
-        var CacheObject = new mod_cache({
+        var CacheObject = new Mod_cache({
             ttl: 1,
             cachesize: 5
         }), noop = function() {};
@@ -125,7 +125,7 @@ describe('caching tests', function() {
     });
 
     it('should not expire a key', function(done) {
-        var CacheObject = new mod_cache({
+        var CacheObject = new Mod_cache({
             ttl: 0,
             cachesize: 5
         });
@@ -141,7 +141,7 @@ describe('caching tests', function() {
     });
 
     it('should expire head via ttl', function(done) {
-        var CacheObject = new mod_cache({
+        var CacheObject = new Mod_cache({
             ttl: 1,
             cachesize: 5
         });
@@ -156,7 +156,7 @@ describe('caching tests', function() {
     });
 
     it('should expire tail via ttl', function(done) {
-        var CacheObject = new mod_cache({
+        var CacheObject = new Mod_cache({
             ttl: 1,
             cachesize: 5
         });
@@ -171,7 +171,7 @@ describe('caching tests', function() {
     });
 
     it('should expire middle via ttl', function(done) {
-        var CacheObject = new mod_cache({
+        var CacheObject = new Mod_cache({
             ttl: 1,
             cachesize: 5
         });
@@ -187,7 +187,7 @@ describe('caching tests', function() {
     });
 
     it('should throw if cache.get does not get a callback', function() {
-        var CacheObject = new mod_cache({
+        var CacheObject = new Mod_cache({
             ttl: 1,
             cachesize: 5
         });
@@ -198,7 +198,7 @@ describe('caching tests', function() {
     });
 
     it('should remove items from cache when cache limit is hit', function(done) {
-        var CacheObject = new mod_cache({
+        var CacheObject = new Mod_cache({
             ttl: 1,
             cachesize: 2
         });
