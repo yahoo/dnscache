@@ -49,7 +49,7 @@ Configuration
 -------------
 
    * `enable` - Whether dnscache is enabled or not, defaults to `false`.
-   * `ttl` - ttl for cache-entries. Default: `300`
+   * `ttl` - ttl in seconds for cache-entries. Default: `300`
    * `cachesize` - number of cache entries, defaults to `1000`
    * `cache` - If a custom cache needs to be used instead of the supplied cache implementation. Only for Advanced Usage. Custom Cache needs to have same interface for `get` and `set`.
 
