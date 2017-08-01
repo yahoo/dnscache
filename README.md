@@ -26,7 +26,8 @@ var dns = require('dns'),
     dnscache = require('dnscache')({
         "enable" : true,
         "ttl" : 300,
-        "cachesize" : 1000
+        "cachesize" : 1000,
+        "useStale": false
     });
     
     //to use the cached dns either of dnscache or dns can be called.
@@ -52,6 +53,7 @@ Configuration
    * `ttl` - ttl in seconds for cache-entries. Default: `300`
    * `cachesize` - number of cache entries, defaults to `1000`
    * `cache` - If a custom cache needs to be used instead of the supplied cache implementation. Only for Advanced Usage. Custom Cache needs to have same interface for `get` and `set`.
+   * `useStale` - When cache expires, user can be served stale value and re-fetched in the background, defaults to `false`.
 
 
 Advanced Caching

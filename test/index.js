@@ -10,12 +10,13 @@ var assert = require('assert'),
     mod = require('../lib/index.js')({
         enable: true,
         ttl: 300,
-        cachesize: 1000
+        cachesize: 1000,
+        useStale: true
     });
     
 var dns = require('dns');
-var methods = [dns.lookup, dns.resolve, dns.resolve4, dns.resolve6, dns.resolveMx,dns.resolveTxt,
-    dns.resolveSrv, dns.resolveNs, dns.resolveCname, dns.reverse];
+var methods = ["lookup", "resolve", "resolve4", "resolve6", "resolveMx", "resolveTxt",
+    "resolveSrv", "resolveNs", "resolveCname", "reverse"];
 var params = ["www.yahoo.com", "www.google.com", "www.google.com", "ipv6.google.com", "yahoo.com",
     "google.com", "www.yahoo.com", "yahoo.com", "www.yahoo.com", "173.236.27.26"];
 var prefix = ['lookup_', 'resolve_', 'resolve4_', 'resolve6_', 'resolveMx_', 'resolveTxt_',
@@ -35,10 +36,8 @@ describe('dnscache main test suite', function() {
     });
 
     it('should verify internal cache is create for each call', function (done) {
-        var index = 0;
-        async.eachSeries(methods, function(method, cb) {
-            method(params[index], function(err, result) {
-                ++index;
+        async.eachOf(methods, function(name, index, cb) {
+            dns[name](params[index], function(err, result) {
                 cb(err, result);
             });
         }, function () {
@@ -53,10 +52,8 @@ describe('dnscache main test suite', function() {
     });
 
     it('verify hits are incremented', function (done) {
-        var index = 0;
-        async.eachSeries(methods, function(method, cb) {
-            method(params[index], function(err, result) {
-                ++index;
+        async.eachOf(methods, function(name, index, cb) {
+            dns[name](params[index], function(err, result) {
                 cb(err, result);
             });
         }, function () {
@@ -105,8 +102,8 @@ describe('dnscache main test suite', function() {
 
     it('should error if the underlying dns method throws', function(done) {
         var errors = [];
-        async.each(methods, function(method, cb) {
-            method([], function(err) {
+        async.each(methods, function(name, cb) {
+            dns[name]([], function(err) {
                 errors.push(err);
                 cb(null);
             });
@@ -153,10 +150,8 @@ describe('dnscache main test suite', function() {
     });
 
     it('not create a cache from an error in a lookup', function (done) {
-        var index = 0;
-        async.eachSeries(methods, function(method, cb) {
-            method('someerrordata', function(err) {
-                ++index;
+        async.eachOf(methods, function(name, index, cb) {
+            dns[name]('someerrordata', function(err) {
                 cb(null, err);
             });
         }, function () {
@@ -234,6 +229,7 @@ describe('dnscache main test suite', function() {
             assert.ok(conf);
             assert.equal(conf.ttl, 300);
             assert.equal(conf.cachesize, 1000);
+            assert.equal(conf.useStale, false);
             done();
         });
     });
@@ -260,4 +256,96 @@ describe('dnscache main test suite', function() {
             });
         });
     }
+
+    it('cache should evict if useStale disabled', function(done) {
+        //if created from other tests
+        if (require('dns').internalCache) {
+            delete require('dns').internalCache;
+        }
+        var testee = require('../lib/index.js')({
+            enable: true,
+            ttl: 5,
+            cachesize: 1000,
+            useStale: false
+        });
+
+        async.eachOf(methods, function(name, index, cb) {
+            testee[name](params[index], function(err, result) {
+                cb(err, result);
+            });
+        }, function (err) {
+            if (err) {
+                return done(err);
+            }
+            methods.forEach(function(name, index) {
+                var key = suffix[index] !== 'none' ? prefix[index] + params[index] + suffix[index] : prefix[index] + params[index];
+                assert.equal(testee.internalCache.data[key].hit, 0, 'hit should be 0 for ' + key);
+            });
+
+            // wait until all cache expired.
+            setTimeout(function () {
+                async.eachOf(methods, function(name, index, cb) {
+                    testee[name](params[index], function(err, result) {
+                        cb(err, result);
+                    });
+                }, function (err) {
+                    if (err) {
+                        return done(err);
+                    }
+                    methods.forEach(function(name, index) {
+                        var key = suffix[index] !== 'none' ? prefix[index] + params[index] + suffix[index] : prefix[index] + params[index];
+                        assert.equal(testee.internalCache.data[key].hit, 0, 'hit should be 0 for ' + key);
+                    });
+
+                    done();
+                });
+            }, 5*1000);
+        });
+    });
+
+    it('cache should not evict if useStale enabled', function(done) {
+        //if created from other tests
+        if (require('dns').internalCache) {
+            delete require('dns').internalCache;
+        }
+        var testee = require('../lib/index.js')({
+            enable: true,
+            ttl: 5,
+            cachesize: 1000,
+            useStale: true
+        });
+
+        async.eachOf(methods, function(name, index, cb) {
+            testee[name](params[index], function(err, result) {
+                cb(err, result);
+            });
+        }, function (err) {
+            if (err) {
+                return done(err);
+            }
+            methods.forEach(function(name, index) {
+                var key = suffix[index] !== 'none' ? prefix[index] + params[index] + suffix[index] : prefix[index] + params[index];
+                assert.equal(testee.internalCache.data[key].hit, 0, 'hit should be 0 for ' + key);
+            });
+
+            // wait until all cache expired.
+            setTimeout(function () {
+                async.eachOf(methods, function(name, index, cb) {
+                    testee[name](params[index], function(err, result) {
+                        cb(err, result);
+                    });
+                }, function (err) {
+                    if (err) {
+                        return done(err);
+                    }
+                    methods.forEach(function(name, index) {
+                        var key = suffix[index] !== 'none' ? prefix[index] + params[index] + suffix[index] : prefix[index] + params[index];
+                        assert.equal(testee.internalCache.data[key].hit, 1, 'hit should be 1 for ' + key);
+                    });
+
+                    done();
+                });
+            }, 5*1000);
+        });
+    });
 });
