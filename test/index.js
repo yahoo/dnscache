@@ -124,7 +124,7 @@ describe('dnscache main test suite', function() {
     });
 
     it('should error on invalid reverse lookup', function(done) {
-        dns.reverse('1.1.1.1', function(err) {
+        dns.reverse('0.42.42.42', function(err) {
             assert.ok((err instanceof Error));
             done();
         });
