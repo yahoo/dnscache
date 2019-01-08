@@ -11,6 +11,8 @@ The goal of this module is to cache the most used/most recent dns calls, to avoi
 
 Once this module is enabled, all the subsequent calls to `require('dns')` are wrapped too.
 
+**NOTE:** There are situations where the built-in `dns` functions would throw, rather than call back with an error. Due to the fact that asynchronous caching mechanisms are supported, all errors for these functions will be passed as the first argument to the callback.
+
 Installation
 ------------
 
@@ -47,7 +49,7 @@ Configuration
 -------------
 
    * `enable` - Whether dnscache is enabled or not, defaults to `false`.
-   * `ttl` - ttl for cache-entries. Default: `300`
+   * `ttl` - ttl in seconds for cache-entries. Default: `300`
    * `cachesize` - number of cache entries, defaults to `1000`
    * `cache` - If a custom cache needs to be used instead of the supplied cache implementation. Only for Advanced Usage. Custom Cache needs to have same interface for `get` and `set`.
 
