@@ -1,5 +1,4 @@
-/* jshint ignore:start */
-// /*global describe, it*/
+/*global describe, it*/
 
 var globalOptions = {
     enable: true,
@@ -7,6 +6,7 @@ var globalOptions = {
     cachesize: 1000
 };
 var assert = require("assert");
+var async = require("async");
 var dns = require('../lib/index.js')(globalOptions);
 
 function prepare(options) {
@@ -59,29 +59,19 @@ describe('dnscache additional tests for full coverage', function() {
             ["resolveCname", "www.yahoo.com"],
             ["reverse", "1.1.1.1"]
         ];
-        var concurrent = 0;
-        function callback() {
-            concurrent--;
-            if (concurrent === 0) {
-                done();
-            }
-        }
-        for (var m = 0; m < methods.length; m++) {
-            (function(method) {
-                var results = [];
-                for (var i = 0; i < 2; i++) {
-                    concurrent++;
-                    dns[method[0]](method[1], function(err, result) {
-                        assert.ok(!err);
-                        results.push(result);
-                        if (results.length == 2) {
-                            assert.deepStrictEqual(results[0], results[1], "expected same result from cached query");
-                        }
-                        callback();
-                    });
-                }
-            })(methods[m]);
-        }
+
+        async.eachSeries(methods, function(method, itemDone) {
+            async.times(2, function(i, callback) {
+                dns[method[0]](method[1], function(err, result) {
+                    assert.ok(!err);
+                    callback(null, result);
+                });
+            }, function(err, results) {
+                require("assert").deepStrictEqual(results[0], results[1], "expected same result from cached query");
+                itemDone(null);
+            });
+        }, function() {
+            done();
+        });
     });
 });
-/* jshint ignore:end */
