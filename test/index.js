@@ -12,7 +12,7 @@ var assert = require('assert'),
         ttl: 300,
         cachesize: 1000
     });
-    
+
 var dns = require('dns');
 var methods = [dns.lookup, dns.resolve, dns.resolve4, dns.resolve6, dns.resolveMx,dns.resolveTxt,
     dns.resolveSrv, dns.resolveNs, dns.resolveCname, dns.reverse];
@@ -72,7 +72,7 @@ describe('dnscache main test suite', function() {
 
     it('require again and verify cache is same as before', function (done) {
         require('../lib/index.js')({
-            enable: true, 
+            enable: true,
             ttl: 300,
             cachesize: 1000
         });
@@ -124,7 +124,8 @@ describe('dnscache main test suite', function() {
     });
 
     it('should error on invalid reverse lookup', function(done) {
-        dns.reverse('1.1.1.1', function(err) {
+        // from the TEST-NET-1 block, as specified in https://tools.ietf.org/html/rfc5737
+        dns.reverse('192.0.2.0', function(err) {
             assert.ok((err instanceof Error));
             done();
         });
@@ -180,7 +181,7 @@ describe('dnscache main test suite', function() {
             done();
         });
     });
-    
+
     it('should not cache if enabled: false', function(done) {
         //if created from other tests
         if (require('dns').internalCache) {
@@ -222,14 +223,14 @@ describe('dnscache main test suite', function() {
             enable: true
         },
         testee = require('../lib/index.js')(conf);
-        
+
         testee.lookup('127.0.0.1', function() {
             //verify cache is created
             assert.ok(testee.internalCache);
             assert.equal(testee.internalCache.data['lookup_127.0.0.1_0_0_false'].hit, 0, 'hit should be 0 for family4');
             assert.ok(dns.internalCache);
             assert.equal(dns.internalCache.data['lookup_127.0.0.1_0_0_false'].hit, 0, 'hit should be 0 for family4');
-            
+
             //verify default values
             assert.ok(conf);
             assert.equal(conf.ttl, 300);
