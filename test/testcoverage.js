@@ -63,11 +63,10 @@ describe('dnscache additional tests for full coverage', function() {
         async.eachSeries(methods, function(method, itemDone) {
             async.times(2, function(i, callback) {
                 dns[method[0]](method[1], function(err, result) {
-                    assert.ok(!err);
                     callback(null, result);
                 });
             }, function(err, results) {
-                require("assert").deepStrictEqual(results[0], results[1], "expected same result from cached query");
+                assert.deepStrictEqual(results[0], results[1], "expected same result from cached query");
                 itemDone(null);
             });
         }, function() {
