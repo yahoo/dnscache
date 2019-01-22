@@ -66,7 +66,7 @@ describe('dnscache additional tests for full coverage', function() {
                     callback(null, result);
                 });
             }, function(err, results) {
-                assert.deepStrictEqual(results[0], results[1], "expected same result from cached query");
+                (assert.deepStrictEqual || assert.deepEqual)(results[0], results[1], "expected same result from cached query");
                 itemDone(null);
             });
         }, function() {
