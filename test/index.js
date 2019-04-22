@@ -260,5 +260,22 @@ describe('dnscache main test suite', function() {
                 });
             });
         });
+
+        it('should return an array copy if lookup all', function(done) {
+            //if created from other tests
+            if (require('dns').internalCache) {
+                delete require('dns').internalCache;
+            }
+            var conf = {
+                enable: true
+            },
+                testee = require('../lib/index.js')(conf);
+            dns.lookup('127.0.0.1', {all: true}, function(err, addresses) {
+                assert.ok(Array.isArray(addresses));
+                addresses.pop();
+                assert.equal(testee.internalCache.data['lookup_127.0.0.1_0_0_true'].val.length, 1, 'length should be 1');
+                done();
+            });
+        });
     }
 });
