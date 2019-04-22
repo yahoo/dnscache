@@ -2,7 +2,7 @@
     "name": "dnscache",
     "description": "dnscache for Node",
     "author": "Vinit Sacheti <vsacheti@yahoo.com>",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "keywords": [
         "dnscache",
         "dns"
@@ -22,14 +22,14 @@
         "url": "http://github.com/yahoo/dnscache.git"
     },
     "devDependencies": {
-        "async": "~1.5.2",
-        "istanbul": "~0.4.3",
-        "jenkins-mocha": "~2.6.0",
-        "jshint": "~2.9.2",
-        "yui-lint": "~0.2.0"
+        "async": "^2.6.2",
+        "istanbul": "^0.4.5",
+        "jenkins-mocha": "^7.0.0",
+        "jshint": "^2.10.2",
+        "yui-lint": "^0.2.0"
     },
     "dependencies": {
-        "asap": "~2.0.3",
-        "lodash.clone": "~4.3.2"
+        "asap": "^2.0.6",
+        "lodash.clone": "^4.5.0"
     }
 }
