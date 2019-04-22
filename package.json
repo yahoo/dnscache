@@ -23,8 +23,8 @@
     },
     "devDependencies": {
         "async": "^2.6.2",
-        "jenkins-mocha": "^7.0.0",
         "jshint": "^2.10.2",
+        "mocha": "^6.1.4",
         "nyc": "^14.0.0",
         "yui-lint": "^0.2.0"
     },
